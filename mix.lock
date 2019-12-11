@@ -1,0 +1,4 @@
+%{
+  "msgpax": {:hex, :msgpax, "2.2.4", "7b3790ef684089076b63c0f08c2f4b079c6311daeb006b69e4ed2bf67518291e", [:mix], [{:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: true]}], "hexpm"},
+  "netler": {:hex, :netler, "0.1.2", "411f2f09fe75fe086baea71e37e3f914bac56decf486b9808eebf5b45fb57def", [:mix], [{:msgpax, "~> 2.0", [hex: :msgpax, repo: "hexpm", optional: false]}], "hexpm"},
+}
