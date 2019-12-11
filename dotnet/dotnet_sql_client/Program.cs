@@ -8,19 +8,17 @@ namespace DotnetSqlClient
     {
         static void Main(string[] args)
         {
+            var client = new Client();
+
             Netler.Server.Export(
                 args,
                 new Dictionary<string, Func<object[], object>> {
-                    {"Add", Add}
+                    {"Connect", client.Connect},
+                    {"ExecuteScalar", client.ExecuteScalar}
                 }
             );
         }
 
-        static object Add(params object[] parameters)
-        {
-            var a = Convert.ToInt32(parameters[0]);
-            var b = Convert.ToInt32(parameters[1]);
-            return a + b;
-        }
+
     }
 }

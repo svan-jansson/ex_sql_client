@@ -1,0 +1,10 @@
+version: "3.2"
+services:
+  sql-server-db:
+    container_name: sql-server-db
+    image: microsoft/mssql-server-linux:latest
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "InsecurePassword123"
+      ACCEPT_EULA: "Y"

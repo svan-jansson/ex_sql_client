@@ -1,18 +1,6 @@
 defmodule ExSqlClient do
-  @moduledoc """
-  Documentation for ExSqlClient.
-  """
+  alias ExSqlClient.DotnetSqlClient
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> ExSqlClient.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
+  def connect(connection_string), do: DotnetSqlClient.connect(connection_string)
+  def execute_scalar(command), do: DotnetSqlClient.execute_scalar(command)
 end

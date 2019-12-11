@@ -9,6 +9,7 @@
         <Reference Include="Netler">
             <HintPath>netler/Netler.dll</HintPath>
         </Reference>
+        <PackageReference Include="System.Data.SqlClient" Version="4.8.0" />
     </ItemGroup>
 
 </Project>

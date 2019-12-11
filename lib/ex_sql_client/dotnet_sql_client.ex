@@ -1,5 +1,6 @@
 defmodule ExSqlClient.DotnetSqlClient do
   use Netler, dotnet_project: :dotnet_sql_client
 
-  def add(a, b), do: invoke("Add", [a, b])
+  def connect(connection_string), do: invoke("Connect", [connection_string])
+  def execute_scalar(command), do: invoke("ExecuteScalar", [command])
 end
