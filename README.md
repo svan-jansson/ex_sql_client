@@ -1,21 +1,12 @@
 # ExSqlClient
 
-**TODO: Add description**
+MSSQL driver for Elixir based on Netler and .NET's `System.Data.SqlClient`.
 
-## Installation
+## Goals
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `ex_sql_client` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:ex_sql_client, "~> 0.1.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/ex_sql_client](https://hexdocs.pm/ex_sql_client).
-
+- Provide an easy-to-use interface for interacting with MSSQL
+- Provide comprehensible type mappings between MSSQL and Elixir
+- Support encrypted connections
+- Support multiple result sets
+- Implement the `DbConnection` behaviour
+- Provide an `Ecto.Adapter` that is compatible with Ecto 3
