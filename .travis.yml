@@ -26,5 +26,6 @@ install:
 
 script:
   - docker-compose up -d
+  - mix local.hex --force
   - mix deps.get
   - mix test --only integration
