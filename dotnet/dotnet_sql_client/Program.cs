@@ -14,7 +14,7 @@ namespace DotnetSqlClient
                 args,
                 new Dictionary<string, Func<object[], object>> {
                     {"Connect", client.Connect},
-                    {"ExecuteScalar", client.ExecuteScalar}
+                    {"Execute", client.Execute}
                 }
             );
         }
