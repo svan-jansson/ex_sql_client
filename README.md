@@ -1,5 +1,7 @@
 # ExSqlClient
 
+[![Build Status](https://travis-ci.com/svan-jansson/ex_sql_client.svg?branch=master)](https://travis-ci.com/svan-jansson/ex_sql_client)
+
 MSSQL driver for Elixir based on Netler and .NET's `System.Data.SqlClient`.
 
 ## Goals
