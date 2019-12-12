@@ -1,5 +1,10 @@
 language: elixir
 
+elixir:
+  - "1.9.2"
+otp_release:
+  - "22.0"
+
 env:
   - DOCKER_COMPOSE_VERSION=1.4.2
 
