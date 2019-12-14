@@ -39,10 +39,23 @@ namespace DotnetSqlClient
                     }
                 }
                 var reader = command.ExecuteReader();
-                while (reader.Read())
+                var hasResults = true;
+                while (hasResults)
                 {
-                    results.Add(Enumerable.Range(0, reader.FieldCount)
-                        .ToDictionary(i => reader.GetName(i), i => reader.GetValue(i)));
+                    while (reader.Read())
+                    {
+                        results.Add(Enumerable.Range(0, reader.FieldCount)
+                            .ToDictionary(i =>
+                            {
+                                var name = reader.GetName(i);
+                                if (string.IsNullOrEmpty(name))
+                                {
+                                    name = i.ToString();
+                                }
+                                return name;
+                            }, i => reader.GetValue(i)));
+                    }
+                    hasResults = reader.NextResult();
                 }
             }
             return results;
