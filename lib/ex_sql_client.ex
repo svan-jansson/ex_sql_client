@@ -1,7 +1,13 @@
 defmodule ExSqlClient do
   alias ExSqlClient.DotnetSqlClient
 
-  def connect(connection_string), do: DotnetSqlClient.connect(connection_string)
-  def execute(command), do: DotnetSqlClient.execute(command, %{})
-  def execute(command, parameters), do: DotnetSqlClient.execute(command, parameters)
+  def start_link(_opts \\ []) do
+    Netler.Client.start_link(:dotnet_sql_client)
+  end
+
+  def connect(pid, connection_string),
+    do: Netler.Client.invoke(pid, "Connect", [connection_string])
+
+  def execute(pid, command, parameters \\ %{}),
+    do: Netler.Client.invoke(pid, "Execute", [command, parameters])
 end

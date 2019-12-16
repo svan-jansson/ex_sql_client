@@ -4,12 +4,14 @@ defmodule ExSqlClient.MixProject do
   def project do
     [
       app: :ex_sql_client,
-      version: "0.1.3",
+      version: "0.1.4",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       compilers: Mix.compilers() ++ [:netler],
-      dotnet_projects: [:dotnet_sql_client]
+      dotnet_projects: [
+        {:dotnet_sql_client, autostart: false}
+      ]
     ]
   end
 
@@ -24,7 +26,7 @@ defmodule ExSqlClient.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:netler, "~> 0.1"}
+      {:netler, "~> 0.2"}
     ]
   end
 end
