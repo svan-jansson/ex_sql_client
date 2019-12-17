@@ -14,4 +14,9 @@ MSSQL driver for Elixir based on [Netler](https://github.com/svan-jansson/netler
 - Support encrypted connections ☑
 - Support multiple result sets ☑
 - Implement the `DbConnection` behaviour - _in progress_
+  - Connect ☑
+  - Execute ☑
+  - Transactions ☐
+  - Prepared Statements ☐
+- Release first version on hex.pm ☐
 - Provide an `Ecto.Adapter` that is compatible with Ecto 3 ☐
