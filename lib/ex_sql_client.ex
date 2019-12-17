@@ -1,13 +1,23 @@
 defmodule ExSqlClient do
-  alias ExSqlClient.DotnetSqlClient
+  alias ExSqlClient.Query
 
-  def start_link(_opts \\ []) do
-    Netler.Client.start_link(:dotnet_sql_client)
+  def child_spec(opts) do
+    DBConnection.child_spec(ExSqlClient.Protocol, default(opts))
   end
 
-  def connect(pid, connection_string),
-    do: Netler.Client.invoke(pid, "Connect", [connection_string])
+  def start_link(opts \\ []) do
+    DBConnection.start_link(ExSqlClient.Protocol, default(opts))
+  end
 
-  def execute(pid, command, parameters \\ %{}),
-    do: Netler.Client.invoke(pid, "Execute", [command, parameters])
+  def query(conn, query, params \\ %{}, opts \\ []) do
+    query = %Query{statement: query}
+    response = DBConnection.prepare_execute(conn, query, params, opts)
+
+    case response do
+      {:ok, _query, result} -> {:ok, result}
+      _ -> response
+    end
+  end
+
+  defp default(opts), do: opts
 end
