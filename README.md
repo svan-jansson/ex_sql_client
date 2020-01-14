@@ -13,7 +13,7 @@ MSSQL driver for Elixir based on [Netler](https://github.com/svan-jansson/netler
 
 - Support encrypted connections ☑
 - Support multiple result sets ☑
-- Implement the `DbConnection` behaviour - _in progress_
+- Implement the `DbConnection` behaviour
   - Connect ☑
     - Disconnect ☑
   - Execute ☑
