@@ -18,6 +18,6 @@ MSSQL driver for Elixir based on [Netler](https://github.com/svan-jansson/netler
     - Disconnect ☐
   - Execute ☑
   - Transactions ☑
-  - Prepared Statements ☐
+  - Prepared Statements ☑
 - Release first version on hex.pm ☐
 - Provide an `Ecto.Adapter` that is compatible with Ecto 3 ☐

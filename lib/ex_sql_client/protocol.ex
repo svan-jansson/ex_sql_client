@@ -24,8 +24,41 @@ defmodule ExSqlClient.Protocol do
   end
 
   @impl true
-  def handle_prepare(query, _opts, state) do
-    {:ok, query, state}
+  def handle_prepare(query, opts, state) do
+    case Keyword.get(opts, :prepare, false) do
+      true ->
+        case Client.invoke(state.client, "PrepareStatement", [
+               query.statement
+             ]) do
+          {:ok, statement_id} ->
+            {:ok, %{query | statement_id: statement_id}, state}
+
+          {:error, reason} ->
+            {:error, reason, state}
+        end
+
+      false ->
+        {:ok, query, state}
+    end
+  end
+
+  @impl true
+  def handle_execute(
+        query = %{statement_id: statement_id},
+        params,
+        _opts,
+        state = %{status: :transaction}
+      )
+      when statement_id != nil do
+    case Client.invoke(state.client, "ExecutePreparedStatementInTransaction", [
+           query.statement,
+           params,
+           state.transaction_id,
+           statement_id
+         ]) do
+      {:ok, result} -> {:ok, query, result, state}
+      {:error, reason} -> {:error, reason, state}
+    end
   end
 
   @impl true
@@ -34,6 +67,19 @@ defmodule ExSqlClient.Protocol do
            query.statement,
            params,
            state.transaction_id
+         ]) do
+      {:ok, result} -> {:ok, query, result, state}
+      {:error, reason} -> {:error, reason, state}
+    end
+  end
+
+  @impl true
+  def handle_execute(query = %{statement_id: statement_id}, params, _opts, state)
+      when statement_id != nil do
+    case Client.invoke(state.client, "ExecutePreparedStatement", [
+           query.statement,
+           params,
+           statement_id
          ]) do
       {:ok, result} -> {:ok, query, result, state}
       {:error, reason} -> {:error, reason, state}

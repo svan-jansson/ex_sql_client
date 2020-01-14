@@ -10,6 +10,7 @@ namespace DotnetSqlClient
     {
         private IDbConnection _connection { get; set; }
         private Dictionary<int, IDbTransaction> _transactions { get; set; }
+        private Dictionary<int, IDbCommand> _preparedStatements { get; set; }
 
         public object Connect(params object[] parameters)
         {
@@ -20,6 +21,7 @@ namespace DotnetSqlClient
                 _connection.Open();
             }
             _transactions = new Dictionary<int, IDbTransaction>();
+            _preparedStatements = new Dictionary<int, IDbCommand>();
             return _connection.State == ConnectionState.Open;
         }
 
@@ -35,9 +37,16 @@ namespace DotnetSqlClient
         {
             var transactionId = Convert.ToInt32(parameters[0]);
             var transaction = _transactions[transactionId];
-            transaction.Rollback();
-            _transactions.Remove(transactionId);
-            transaction.Dispose();
+            try
+            {
+                transaction.Rollback();
+            }
+            catch
+            {
+                _transactions.Remove(transactionId);
+                transaction.Dispose();
+                throw;
+            }
             return true;
         }
 
@@ -45,9 +54,16 @@ namespace DotnetSqlClient
         {
             var transactionId = Convert.ToInt32(parameters[0]);
             var transaction = _transactions[transactionId];
-            transaction.Commit();
-            _transactions.Remove(transactionId);
-            transaction.Dispose();
+            try
+            {
+                transaction.Commit();
+            }
+            catch
+            {
+                _transactions.Remove(transactionId);
+                transaction.Dispose();
+                throw;
+            }
             return true;
         }
 
@@ -66,12 +82,63 @@ namespace DotnetSqlClient
             var transaction = _transactions[transactionId];
             return ExecuteStatement(sql, variables, transaction);
         }
-        private object ExecuteStatement(string sql, IDictionary<object, object> variables, IDbTransaction transaction = null)
+
+        public object ExecutePreparedStatement(params object[] parameters)
         {
-            var results = new List<IDictionary<string, object>>();
-            using (var command = _connection.CreateCommand())
+            var sql = Convert.ToString(parameters[0]);
+            var variables = parameters[1] as IDictionary<object, object>;
+            var statementId = Convert.ToInt32(parameters[2]);
+            var command = _preparedStatements[statementId];
+            return ExecuteStatement(sql, variables, command: command);
+        }
+
+        public object ExecutePreparedStatementInTransaction(params object[] parameters)
+        {
+            var sql = Convert.ToString(parameters[0]);
+            var variables = parameters[1] as IDictionary<object, object>;
+            var transactionId = Convert.ToInt32(parameters[2]);
+            var statementId = Convert.ToInt32(parameters[3]);
+            var transaction = _transactions[transactionId];
+            var command = _preparedStatements[statementId];
+            return ExecuteStatement(sql, variables, transaction, command);
+        }
+
+        public object PrepareStatement(params object[] parameters)
+        {
+            var sql = Convert.ToString(parameters[0]);
+            var command = _connection.CreateCommand();
+            try
             {
                 command.CommandText = sql;
+                command.Prepare();
+            }
+            catch
+            {
+                command.Dispose();
+                throw;
+            }
+            var statementId = command.GetHashCode();
+            _preparedStatements.Add(statementId, command);
+            return statementId;
+        }
+
+        private object ExecuteStatement(string sql, IDictionary<object, object> variables, IDbTransaction transaction = null, IDbCommand command = null)
+        {
+            var results = new List<IDictionary<string, object>>();
+            var disposeCommand = false;
+            if (command == null)
+            {
+                command = _connection.CreateCommand();
+                command.CommandText = sql;
+                disposeCommand = true;
+            }
+            else
+            {
+                command.Parameters.Clear();
+            }
+
+            try
+            {
                 if (transaction != null)
                 {
                     command.Transaction = transaction;
@@ -104,6 +171,15 @@ namespace DotnetSqlClient
                     }
                     hasResults = reader.NextResult();
                 }
+                reader.Close();
+            }
+            catch
+            {
+                if (disposeCommand)
+                {
+                    command.Dispose();
+                }
+                throw;
             }
             return results;
         }

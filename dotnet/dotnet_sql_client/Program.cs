@@ -16,9 +16,12 @@ namespace DotnetSqlClient
                     {"Connect", client.Connect},
                     {"Execute", client.Execute},
                     {"ExecuteInTransaction", client.ExecuteInTransaction},
+                    {"ExecutePreparedStatement", client.ExecutePreparedStatement},
+                    {"ExecutePreparedStatementInTransaction", client.ExecutePreparedStatementInTransaction},
                     {"BeginTransaction", client.BeginTransaction},
                     {"RollbackTransaction", client.RollbackTransaction},
-                    {"CommitTransaction", client.CommitTransaction}
+                    {"CommitTransaction", client.CommitTransaction},
+                    {"PrepareStatement", client.PrepareStatement}
                 }
             );
         }

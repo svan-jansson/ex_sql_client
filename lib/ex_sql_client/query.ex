@@ -1,5 +1,5 @@
 defmodule ExSqlClient.Query do
-  defstruct [:statement]
+  defstruct [:statement, :statement_id]
 
   defimpl DBConnection.Query, for: ExSqlClient.Query do
     def parse(query, _), do: query

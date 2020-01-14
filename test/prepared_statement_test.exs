@@ -11,9 +11,15 @@ defmodule PreparedStatementTest do
 
   @tag :integration
   test "can prepare and execute a statement", %{conn: conn} do
-    query = %ExSqlClient.Query{statement: "SELECT * FROM [sys].[objects] WHERE [type] = @type"}
+    query = %ExSqlClient.Query{
+      statement: "SELECT [name] FROM [sys].[objects] WHERE [type] = @type"
+    }
+
     {:ok, query} = ExSqlClient.prepare(conn, query)
-    {:ok, result} = ExSqlClient.execute(conn, query, %{type: "P"})
+    {:ok, _query, result} = ExSqlClient.execute(conn, query, %{type: "P"})
+    assert Enum.count(result) > 0
+
+    {:ok, _query, result} = ExSqlClient.execute(conn, query, %{type: "U"})
     assert Enum.count(result) > 0
   end
 end

@@ -19,7 +19,11 @@ defmodule ExSqlClient do
     end
   end
 
-  defdelegate prepare(conn, query, opts \\ []), to: DBConnection
+  def prepare(conn, query, opts \\ []) do
+    opts = Keyword.put(opts, :prepare, true)
+    DBConnection.prepare(conn, query, opts)
+  end
+
   defdelegate execute(conn, query, params, opts \\ []), to: DBConnection
   defdelegate transaction(conn, fun, opts \\ []), to: DBConnection
   defdelegate rollback(conn, any), to: DBConnection
