@@ -25,6 +25,19 @@ namespace DotnetSqlClient
             return _connection.State == ConnectionState.Open;
         }
 
+        public object Disconnect(params object[] parameters)
+        {
+            if (_connection != null)
+            {
+                _connection.Close();
+                _connection.Dispose();
+                _connection = null;
+                _transactions = null;
+                _preparedStatements = null;
+            }
+            return true;
+        }
+
         public object BeginTransaction(params object[] _parameters)
         {
             var transaction = _connection.BeginTransaction();

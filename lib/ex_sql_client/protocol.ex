@@ -18,6 +18,12 @@ defmodule ExSqlClient.Protocol do
   end
 
   @impl true
+  def disconnect(_err, state) do
+    {:ok, true} = Client.invoke(client, "Disconnect", [])
+    :ok
+  end
+
+  @impl true
   def ping(state) do
     {:ok, [%{"0" => "pong"}]} = Client.invoke(state.client, "Execute", ["SELECT 'pong'", %{}])
     {:ok, state}
@@ -128,20 +134,14 @@ defmodule ExSqlClient.Protocol do
   end
 
   @impl true
-  def checkin(_state) do
-    Logger.error("checkin not implemented")
-    :not_implemented
-  end
-
-  @impl true
   def checkout(state) do
     state = %{state | checked_out: true}
     {:ok, state}
   end
 
   @impl true
-  def disconnect(_err, _state) do
-    Logger.error("disconnect not implemented")
+  def checkin(_state) do
+    Logger.error("checkin not implemented")
     :not_implemented
   end
 

@@ -15,7 +15,7 @@ MSSQL driver for Elixir based on [Netler](https://github.com/svan-jansson/netler
 - Support multiple result sets ☑
 - Implement the `DbConnection` behaviour - _in progress_
   - Connect ☑
-    - Disconnect ☐
+    - Disconnect ☑
   - Execute ☑
   - Transactions ☑
   - Prepared Statements ☑

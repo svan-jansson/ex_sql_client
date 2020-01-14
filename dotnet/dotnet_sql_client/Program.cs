@@ -14,6 +14,7 @@ namespace DotnetSqlClient
                 args,
                 new Dictionary<string, Func<object[], object>> {
                     {"Connect", client.Connect},
+                    {"Disconnect", client.Disconnect},
                     {"Execute", client.Execute},
                     {"ExecuteInTransaction", client.ExecuteInTransaction},
                     {"ExecutePreparedStatement", client.ExecutePreparedStatement},
