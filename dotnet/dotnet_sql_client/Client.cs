@@ -116,6 +116,15 @@ namespace DotnetSqlClient
             return ExecuteStatement(sql, variables, transaction, command);
         }
 
+        public object ClosePreparedStatement(params object[] parameters)
+        {
+            var statementId = Convert.ToInt32(parameters[0]);
+            var command = _preparedStatements[statementId];
+            _preparedStatements.Remove(statementId);
+            command.Dispose();
+            return true;
+        }
+
         public object PrepareStatement(params object[] parameters)
         {
             var sql = Convert.ToString(parameters[0]);

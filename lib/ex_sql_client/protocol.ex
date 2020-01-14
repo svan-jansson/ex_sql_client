@@ -19,7 +19,7 @@ defmodule ExSqlClient.Protocol do
 
   @impl true
   def disconnect(_err, state) do
-    {:ok, true} = Client.invoke(client, "Disconnect", [])
+    {:ok, true} = Client.invoke(state.client, "Disconnect", [])
     :ok
   end
 
@@ -45,6 +45,17 @@ defmodule ExSqlClient.Protocol do
 
       false ->
         {:ok, query, state}
+    end
+  end
+
+  @impl true
+  def handle_close(_query = %{statement_id: statement_id}, _opts, state)
+      when statement_id != nil do
+    case Client.invoke(state.client, "ClosePreparedStatement", [
+           statement_id
+         ]) do
+      {:ok, true} -> {:ok, :closed, state}
+      {:error, reason} -> {:error, reason, state}
     end
   end
 
@@ -142,12 +153,6 @@ defmodule ExSqlClient.Protocol do
   @impl true
   def checkin(_state) do
     Logger.error("checkin not implemented")
-    :not_implemented
-  end
-
-  @impl true
-  def handle_close(_query, _opts, _state) do
-    Logger.error("handle_close not implemented")
     :not_implemented
   end
 

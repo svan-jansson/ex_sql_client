@@ -25,6 +25,7 @@ defmodule ExSqlClient do
   end
 
   defdelegate execute(conn, query, params, opts \\ []), to: DBConnection
+  defdelegate close(conn, query, opts \\ []), to: DBConnection
   defdelegate transaction(conn, fun, opts \\ []), to: DBConnection
   defdelegate rollback(conn, any), to: DBConnection
 

@@ -22,7 +22,8 @@ namespace DotnetSqlClient
                     {"BeginTransaction", client.BeginTransaction},
                     {"RollbackTransaction", client.RollbackTransaction},
                     {"CommitTransaction", client.CommitTransaction},
-                    {"PrepareStatement", client.PrepareStatement}
+                    {"PrepareStatement", client.PrepareStatement},
+                    {"ClosePreparedStatement", client.ClosePreparedStatement}
                 }
             );
         }
