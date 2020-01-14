@@ -9,10 +9,19 @@ defmodule TransactionTest do
     {:ok, %{conn: conn}}
   end
 
-  @tag :integration2
+  @tag :integration
   test "can execute a query in a transaction", %{conn: conn} do
-    ExSqlClient.transaction(conn, fn transaction ->
-      assert ExSqlClient.query(transaction, "SELECT 5") == {:ok, [%{"0" => 5}]}
-    end)
+    assert ExSqlClient.transaction(conn, fn transaction ->
+             assert ExSqlClient.query(transaction, "SELECT 5") == {:ok, [%{"0" => 5}]}
+             :completed
+           end) == {:ok, :completed}
+  end
+
+  @tag :integration
+  test "can rollback a transaction", %{conn: conn} do
+    assert ExSqlClient.transaction(conn, fn transaction ->
+             assert ExSqlClient.query(transaction, "SELECT 5") == {:ok, [%{"0" => 5}]}
+             ExSqlClient.rollback(transaction, :oops)
+           end) == {:error, :oops}
   end
 end

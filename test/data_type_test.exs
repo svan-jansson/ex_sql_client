@@ -10,7 +10,7 @@ defmodule DataTypeTest do
     {:ok, %{conn: conn}}
   end
 
-  @tag :integration2
+  @tag :integration
   test "can select unnamed scalar", %{conn: conn} do
     assert ExSqlClient.query(conn, "SELECT 5") == {:ok, [%{"0" => 5}]}
   end

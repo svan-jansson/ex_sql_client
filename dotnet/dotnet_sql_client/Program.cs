@@ -14,7 +14,11 @@ namespace DotnetSqlClient
                 args,
                 new Dictionary<string, Func<object[], object>> {
                     {"Connect", client.Connect},
-                    {"Execute", client.Execute}
+                    {"Execute", client.Execute},
+                    {"ExecuteInTransaction", client.ExecuteInTransaction},
+                    {"BeginTransaction", client.BeginTransaction},
+                    {"RollbackTransaction", client.RollbackTransaction},
+                    {"CommitTransaction", client.CommitTransaction}
                 }
             );
         }

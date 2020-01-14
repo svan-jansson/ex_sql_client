@@ -7,7 +7,7 @@ defmodule ExSqlClient.Protocol do
 
   alias Netler.Client
 
-  defstruct client: nil, checked_out: false
+  defstruct client: nil, checked_out: false, status: :idle, transaction_id: nil
 
   @impl true
   def connect(opts) do
@@ -29,10 +29,55 @@ defmodule ExSqlClient.Protocol do
   end
 
   @impl true
+  def handle_execute(query, params, _opts, state = %{status: :transaction}) do
+    case Client.invoke(state.client, "ExecuteInTransaction", [
+           query.statement,
+           params,
+           state.transaction_id
+         ]) do
+      {:ok, result} -> {:ok, query, result, state}
+      {:error, reason} -> {:error, reason, state}
+    end
+  end
+
+  @impl true
   def handle_execute(query, params, _opts, state) do
     case Client.invoke(state.client, "Execute", [query.statement, params]) do
       {:ok, result} -> {:ok, query, result, state}
       {:error, reason} -> {:error, reason, state}
+    end
+  end
+
+  @impl true
+  def handle_begin(_opts, state = %{status: :idle}) do
+    case Client.invoke(state.client, "BeginTransaction", []) do
+      {:ok, transaction_id} ->
+        {:ok, :began, %{state | status: :transaction, transaction_id: transaction_id}}
+
+      {:error, reason} ->
+        {:disconnect, reason, state}
+    end
+  end
+
+  @impl true
+  def handle_rollback(_opts, state = %{status: :transaction}) do
+    case Client.invoke(state.client, "RollbackTransaction", [state.transaction_id]) do
+      {:ok, true} ->
+        {:ok, :rolledback, %{state | status: :idle, transaction_id: nil}}
+
+      {:error, reason} ->
+        {:disconnect, reason, state}
+    end
+  end
+
+  @impl true
+  def handle_commit(_opts, state = %{status: :transaction}) do
+    case Client.invoke(state.client, "CommitTransaction", [state.transaction_id]) do
+      {:ok, true} ->
+        {:ok, :committed, %{state | status: :idle, transaction_id: nil}}
+
+      {:error, reason} ->
+        {:disconnect, reason, state}
     end
   end
 
@@ -55,20 +100,8 @@ defmodule ExSqlClient.Protocol do
   end
 
   @impl true
-  def handle_begin(_opts, _state) do
-    Logger.error("handle_begin not implemented")
-    :not_implemented
-  end
-
-  @impl true
   def handle_close(_query, _opts, _state) do
     Logger.error("handle_close not implemented")
-    :not_implemented
-  end
-
-  @impl true
-  def handle_commit(_opts, _state) do
-    Logger.error("handle_commit not implemented")
     :not_implemented
   end
 
@@ -87,12 +120,6 @@ defmodule ExSqlClient.Protocol do
   @impl true
   def handle_fetch(_query, _cursor, _opts, _state) do
     Logger.error("handle_fetch not implemented")
-    :not_implemented
-  end
-
-  @impl true
-  def handle_rollback(_opts, _state) do
-    Logger.error("handle_rollback not implemented")
     :not_implemented
   end
 
