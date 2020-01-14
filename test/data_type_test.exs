@@ -1,4 +1,4 @@
-defmodule ExSqlClientTest do
+defmodule DataTypeTest do
   use ExUnit.Case
   doctest ExSqlClient
 
