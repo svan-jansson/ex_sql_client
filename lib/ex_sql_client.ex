@@ -19,10 +19,7 @@ defmodule ExSqlClient do
     end
   end
 
-  def transaction(conn, fun, opts \\ []) do
-    DBConnection.transaction(conn, fun, opts)
-  end
-
+  defdelegate transaction(conn, fun, opts \\ []), to: DBConnection
   defdelegate rollback(conn, any), to: DBConnection
 
   defp default(opts), do: opts
