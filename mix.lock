@@ -2,5 +2,5 @@
   "connection": {:hex, :connection, "1.0.4", "a1cae72211f0eef17705aaededacac3eb30e6625b04a6117c1b2db6ace7d5976", [:mix], [], "hexpm"},
   "db_connection": {:hex, :db_connection, "2.2.0", "e923e88887cd60f9891fd324ac5e0290954511d090553c415fbf54be4c57ee63", [:mix], [{:connection, "~> 1.0.2", [hex: :connection, repo: "hexpm", optional: false]}], "hexpm"},
   "msgpax": {:hex, :msgpax, "2.2.4", "7b3790ef684089076b63c0f08c2f4b079c6311daeb006b69e4ed2bf67518291e", [:mix], [{:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: true]}], "hexpm"},
-  "netler": {:hex, :netler, "0.2.3", "6511647ac06668918b2b9716b195ca8e679f2bbc6ee226c9e3c2fc625a2c4efe", [:mix], [{:msgpax, "~> 2.0", [hex: :msgpax, repo: "hexpm", optional: false]}], "hexpm"},
+  "netler": {:hex, :netler, "0.2.4", "9a7131e08f2d1931b893434d79814bf6928787369a4e334a56cedcfc50447032", [:mix], [{:msgpax, "~> 2.0", [hex: :msgpax, repo: "hexpm", optional: false]}], "hexpm"},
 }

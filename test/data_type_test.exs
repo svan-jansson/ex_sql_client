@@ -54,4 +54,9 @@ defmodule DataTypeTest do
            ) ==
              {:ok, [%{"first_result_set" => 1}, %{"second_result_set" => 1}]}
   end
+
+  @tag :integration
+  test "can select null values", %{conn: conn} do
+    assert ExSqlClient.query(conn, "SELECT NULL") == {:ok, [%{"0" => nil}]}
+  end
 end
