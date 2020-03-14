@@ -12,7 +12,7 @@ defmodule ExSqlClient.Protocol do
   @impl true
   def connect(opts) do
     connection_string = Keyword.get(opts, :connection_string)
-    {:ok, client} = Client.start_link(dotnet_project: :dotnet_sql_client)
+    {:ok, client} = Client.start_link(:dotnet_sql_client)
     {:ok, true} = Client.invoke(client, "Connect", [connection_string])
     {:ok, %__MODULE__{client: client}}
   end

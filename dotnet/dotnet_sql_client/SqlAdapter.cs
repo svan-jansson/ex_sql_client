@@ -1,62 +1,62 @@
 using System;
-using System.Data.SqlClient;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 
 namespace DotnetSqlClient
 {
-    class Client
+    public class SqlAdapter
     {
-        private IDbConnection _connection { get; set; }
-        private Dictionary<int, IDbTransaction> _transactions { get; set; }
-        private Dictionary<int, IDbCommand> _preparedStatements { get; set; }
+        private IDbConnection Connection { get; set; }
+        private Dictionary<int, IDbTransaction> Transactions { get; set; }
+        private Dictionary<int, IDbCommand> PreparedStatements { get; set; }
 
         public object Connect(params object[] parameters)
         {
-            if (_connection == null)
+            if (Connection == null)
             {
                 var connectionString = Convert.ToString(parameters[0]);
-                _connection = new SqlConnection(connectionString);
-                _connection.Open();
+                Connection = new SqlConnection(connectionString);
+                Connection.Open();
             }
-            _transactions = new Dictionary<int, IDbTransaction>();
-            _preparedStatements = new Dictionary<int, IDbCommand>();
-            return _connection.State == ConnectionState.Open;
+            Transactions = new Dictionary<int, IDbTransaction>();
+            PreparedStatements = new Dictionary<int, IDbCommand>();
+            return Connection.State == ConnectionState.Open;
         }
 
-        public object Disconnect(params object[] parameters)
+        public object Disconnect(params object[] _)
         {
-            if (_connection != null)
+            if (Connection != null)
             {
-                _connection.Close();
-                _connection.Dispose();
-                _connection = null;
-                _transactions = null;
-                _preparedStatements = null;
+                Connection.Close();
+                Connection.Dispose();
+                Connection = null;
+                Transactions = null;
+                PreparedStatements = null;
             }
             return true;
         }
 
-        public object BeginTransaction(params object[] _parameters)
+        public object BeginTransaction(params object[] _)
         {
-            var transaction = _connection.BeginTransaction();
+            var transaction = Connection.BeginTransaction();
             var transactionId = transaction.GetHashCode();
-            _transactions.Add(transactionId, transaction);
+            Transactions.Add(transactionId, transaction);
             return transactionId;
         }
 
         public object RollbackTransaction(params object[] parameters)
         {
             var transactionId = Convert.ToInt32(parameters[0]);
-            var transaction = _transactions[transactionId];
+            var transaction = Transactions[transactionId];
             try
             {
                 transaction.Rollback();
             }
             catch
             {
-                _transactions.Remove(transactionId);
+                Transactions.Remove(transactionId);
                 transaction.Dispose();
                 throw;
             }
@@ -66,14 +66,14 @@ namespace DotnetSqlClient
         public object CommitTransaction(params object[] parameters)
         {
             var transactionId = Convert.ToInt32(parameters[0]);
-            var transaction = _transactions[transactionId];
+            var transaction = Transactions[transactionId];
             try
             {
                 transaction.Commit();
             }
             catch
             {
-                _transactions.Remove(transactionId);
+                Transactions.Remove(transactionId);
                 transaction.Dispose();
                 throw;
             }
@@ -92,7 +92,7 @@ namespace DotnetSqlClient
             var sql = Convert.ToString(parameters[0]);
             var variables = parameters[1] as IDictionary<object, object>;
             var transactionId = Convert.ToInt32(parameters[2]);
-            var transaction = _transactions[transactionId];
+            var transaction = Transactions[transactionId];
             return ExecuteStatement(sql, variables, transaction);
         }
 
@@ -101,7 +101,7 @@ namespace DotnetSqlClient
             var sql = Convert.ToString(parameters[0]);
             var variables = parameters[1] as IDictionary<object, object>;
             var statementId = Convert.ToInt32(parameters[2]);
-            var command = _preparedStatements[statementId];
+            var command = PreparedStatements[statementId];
             return ExecuteStatement(sql, variables, command: command);
         }
 
@@ -111,16 +111,16 @@ namespace DotnetSqlClient
             var variables = parameters[1] as IDictionary<object, object>;
             var transactionId = Convert.ToInt32(parameters[2]);
             var statementId = Convert.ToInt32(parameters[3]);
-            var transaction = _transactions[transactionId];
-            var command = _preparedStatements[statementId];
+            var transaction = Transactions[transactionId];
+            var command = PreparedStatements[statementId];
             return ExecuteStatement(sql, variables, transaction, command);
         }
 
         public object ClosePreparedStatement(params object[] parameters)
         {
             var statementId = Convert.ToInt32(parameters[0]);
-            var command = _preparedStatements[statementId];
-            _preparedStatements.Remove(statementId);
+            var command = PreparedStatements[statementId];
+            PreparedStatements.Remove(statementId);
             command.Dispose();
             return true;
         }
@@ -128,7 +128,7 @@ namespace DotnetSqlClient
         public object PrepareStatement(params object[] parameters)
         {
             var sql = Convert.ToString(parameters[0]);
-            var command = _connection.CreateCommand();
+            var command = Connection.CreateCommand();
             try
             {
                 command.CommandText = sql;
@@ -140,7 +140,7 @@ namespace DotnetSqlClient
                 throw;
             }
             var statementId = command.GetHashCode();
-            _preparedStatements.Add(statementId, command);
+            PreparedStatements.Add(statementId, command);
             return statementId;
         }
 
@@ -150,7 +150,7 @@ namespace DotnetSqlClient
             var disposeCommand = false;
             if (command == null)
             {
-                command = _connection.CreateCommand();
+                command = Connection.CreateCommand();
                 command.CommandText = sql;
                 disposeCommand = true;
             }
@@ -189,7 +189,7 @@ namespace DotnetSqlClient
                                     name = i.ToString();
                                 }
                                 return name;
-                            }, i => reader.GetValue(i)));
+                            }, i => reader.IsDBNull(i) ? null : reader.GetValue(i)));
                     }
                     hasResults = reader.NextResult();
                 }

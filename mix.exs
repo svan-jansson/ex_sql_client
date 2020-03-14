@@ -4,7 +4,7 @@ defmodule ExSqlClient.MixProject do
   def project do
     [
       app: :ex_sql_client,
-      version: "0.2.0",
+      version: "0.2.1",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -25,7 +25,7 @@ defmodule ExSqlClient.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:netler, "~> 0.2"},
+      {:netler, "~> 0.3"},
       {:db_connection, "~> 2.2"}
     ]
   end
