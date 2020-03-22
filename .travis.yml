@@ -4,6 +4,7 @@ sudo: enabled
 
 elixir:
   - "1.9.2"
+
 otp_release:
   - "22.0"
 
@@ -23,9 +24,20 @@ install:
   - sudo apt-get install apt-transport-https
   - sudo apt-get update
   - sudo apt-get install dotnet-sdk-3.1
-
-script:
-  - docker-compose up -d
   - mix local.hex --force
-  - mix deps.get
-  - mix test --only integration
+
+jobs:
+  include:
+    - stage: test
+      script:
+        - mix deps.get
+        - mix compile --warnings-as-errors
+        - mix credo --strict
+        - docker-compose up -d
+        - mix test --only integration
+        
+    - stage: deploy
+      if: branch = master AND type = push AND fork = false
+      script:
+        - mix deps.get
+        - mix hex.publish --yes

@@ -1,4 +1,6 @@
 defmodule ExSqlClient.Query do
+  @moduledoc false
+
   defstruct [:statement, :statement_id]
 
   defimpl DBConnection.Query, for: ExSqlClient.Query do
