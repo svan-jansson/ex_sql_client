@@ -1,6 +1,6 @@
 %{
-  "connection": {:hex, :connection, "1.0.4", "a1cae72211f0eef17705aaededacac3eb30e6625b04a6117c1b2db6ace7d5976", [:mix], [], "hexpm"},
-  "db_connection": {:hex, :db_connection, "2.2.0", "e923e88887cd60f9891fd324ac5e0290954511d090553c415fbf54be4c57ee63", [:mix], [{:connection, "~> 1.0.2", [hex: :connection, repo: "hexpm", optional: false]}], "hexpm"},
-  "msgpax": {:hex, :msgpax, "2.2.4", "7b3790ef684089076b63c0f08c2f4b079c6311daeb006b69e4ed2bf67518291e", [:mix], [{:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: true]}], "hexpm"},
-  "netler": {:hex, :netler, "0.3.0", "e32d7325b5b19b48e4ce8f20c56ed8d952d34bb1606dc9d6127bd36f60beb128", [:mix], [{:msgpax, "~> 2.0", [hex: :msgpax, repo: "hexpm", optional: false]}], "hexpm"},
+  "connection": {:hex, :connection, "1.0.4", "a1cae72211f0eef17705aaededacac3eb30e6625b04a6117c1b2db6ace7d5976", [:mix], [], "hexpm", "4a0850c9be22a43af9920a71ab17c051f5f7d45c209e40269a1938832510e4d9"},
+  "db_connection": {:hex, :db_connection, "2.2.0", "e923e88887cd60f9891fd324ac5e0290954511d090553c415fbf54be4c57ee63", [:mix], [{:connection, "~> 1.0.2", [hex: :connection, repo: "hexpm", optional: false]}], "hexpm", "bdf196feedfa6b83071e808b2b086fb113f8a1c4c7761f6eff6fe4b96aba0086"},
+  "msgpax": {:hex, :msgpax, "2.2.4", "7b3790ef684089076b63c0f08c2f4b079c6311daeb006b69e4ed2bf67518291e", [:mix], [{:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: true]}], "hexpm", "b351b6d992d79624a8430a99d21a41b36b1b90edf84326a294e9f4a2de11f089"},
+  "netler": {:hex, :netler, "0.3.1", "af43f4f991caea9699b2022f42ca138e7f40ad4e6e6e7e6f3e47a397049ba367", [:mix], [{:msgpax, "~> 2.0", [hex: :msgpax, repo: "hexpm", optional: false]}], "hexpm", "06714bf18fca6b052911eea3bf77c4756a700034a141bb0aef661dd1ab8ebc04"},
 }

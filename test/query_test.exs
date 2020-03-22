@@ -38,7 +38,7 @@ defmodule QueryTest do
 
   @tag :integration
   test "can insert and select multiple rows", %{conn: conn} do
-    record_count = 20
+    record_count = 100
 
     for i <- 1..record_count do
       {:ok, _} =
