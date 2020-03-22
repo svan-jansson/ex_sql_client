@@ -6,7 +6,7 @@ defmodule ExSqlClient.MixProject do
       app: :ex_sql_client,
       name: "ExSqlClient",
       source_url: "https://github.com/svan-jansson/ex_sql_client",
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -48,7 +48,7 @@ defmodule ExSqlClient.MixProject do
       maintainers: ["Svan Jansson"],
       licenses: ["MIT"],
       links: %{Github: "https://github.com/svan-jansson/ex_sql_client"},
-      files: ~w(lib dotnet .formatter.exs mix.exs README* LICENSE*)
+      files: ~w(lib dotnet/dotnet_sql_client/*.cs dotnet/dotnet_sql_client/*.csproj .formatter.exs mix.exs README* LICENSE*)
     ]
   end
 
