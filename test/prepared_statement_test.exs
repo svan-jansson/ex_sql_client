@@ -2,9 +2,7 @@ defmodule PreparedStatementTest do
   use ExUnit.Case
 
   setup_all do
-    connection_string =
-      "Server=localhost; MultipleActiveResultSets=true; User Id=sa; Password=InsecurePassword123"
-
+    connection_string = Application.fetch_env!(:ex_sql_client, :test_connection_string)
     {:ok, conn} = ExSqlClient.start_link(connection_string: connection_string)
     {:ok, %{conn: conn}}
   end
@@ -17,12 +15,12 @@ defmodule PreparedStatementTest do
 
     {:ok, query} = ExSqlClient.prepare(conn, query)
     {:ok, _query, result} = ExSqlClient.execute(conn, query, %{type: "P"})
-    assert Enum.count(result) > 0
+    assert !Enum.empty?(result)
 
     {:ok, _query, result} = ExSqlClient.execute(conn, query, %{type: "U"})
 
     {:ok, :closed} = ExSqlClient.close(conn, query)
-    assert Enum.count(result) > 0
+    assert !Enum.empty?(result)
   end
 
   @tag :integration
@@ -33,8 +31,7 @@ defmodule PreparedStatementTest do
 
     {:ok, query} = ExSqlClient.prepare(conn, query)
     {:ok, _query, result} = ExSqlClient.execute(conn, query, %{type: "P"})
-    assert Enum.count(result) > 0
-
+    assert !Enum.empty?(result)
     {:ok, :closed} = ExSqlClient.close(conn, query)
 
     {atom, _reason} = ExSqlClient.execute(conn, query, %{type: "U"})
