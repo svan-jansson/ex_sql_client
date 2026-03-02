@@ -15,12 +15,12 @@ defmodule PreparedStatementTest do
 
     {:ok, query} = ExSqlClient.prepare(conn, query)
     {:ok, _query, result} = ExSqlClient.execute(conn, query, %{type: "P"})
-    assert Enum.count(result) > 0
+    assert !Enum.empty?(result)
 
     {:ok, _query, result} = ExSqlClient.execute(conn, query, %{type: "U"})
 
     {:ok, :closed} = ExSqlClient.close(conn, query)
-    assert Enum.count(result) > 0
+    assert !Enum.empty?(result)
   end
 
   @tag :integration
@@ -31,8 +31,7 @@ defmodule PreparedStatementTest do
 
     {:ok, query} = ExSqlClient.prepare(conn, query)
     {:ok, _query, result} = ExSqlClient.execute(conn, query, %{type: "P"})
-    assert Enum.count(result) > 0
-
+    assert !Enum.empty?(result)
     {:ok, :closed} = ExSqlClient.close(conn, query)
 
     {atom, _reason} = ExSqlClient.execute(conn, query, %{type: "U"})
