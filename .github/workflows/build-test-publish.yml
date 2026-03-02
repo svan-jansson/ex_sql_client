@@ -1,0 +1,167 @@
+name: Build, Test & Publish
+permissions:
+  contents: write
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build & Test (${{ matrix.mssql_image }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        mssql_image:
+          - mcr.microsoft.com/mssql/server:2025-latest
+          - mcr.microsoft.com/mssql/server:2022-latest
+          - mcr.microsoft.com/mssql/server:2019-latest
+          - mcr.microsoft.com/mssql/server:2017-latest
+
+    env:
+      MIX_ENV: test
+      MSSQL_IMAGE: ${{ matrix.mssql_image }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v2
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Compile
+        run: mix compile --warnings-as-errors
+
+      - name: Static analysis
+        run: mix credo
+
+      - name: Run integration tests
+        run: mix test --only integration
+
+  benchmark:
+    name: Benchmark
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref_name == github.event.repository.default_branch && !failure() && !cancelled()
+    # Non-blocking: a flaky benchmark must never prevent a release from shipping.
+    continue-on-error: true
+
+    env:
+      MIX_ENV: dev
+      MSSQL_IMAGE: mcr.microsoft.com/mssql/server:2022-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v2
+
+      - name: Cache Mix dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-dev-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-dev-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Compile
+        run: mix compile
+
+      - name: Run benchmarks
+        # stderr carries Logger/Testcontainers debug noise; stdout has the results.
+        run: mix run bench/benchmarks.exs > bench_results.txt 2>/dev/null
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: bench_results.txt
+
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    needs: [build, benchmark]
+    if: github.ref_name == github.event.repository.default_branch && !failure() && !cancelled()
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: jdx/mise-action@v2
+
+      - name: Cache Mix dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Get version
+        id: version
+        run: |
+          BASE=$(cat VERSION)
+          BASE_COMMIT=$(git log -1 --format="%H" -- VERSION)
+          HEIGHT=$(git rev-list --count "${BASE_COMMIT}..HEAD")
+          VERSION="${BASE}.${HEIGHT}"
+          sed -i "s/version: \"[^\"]*\"/version: \"${VERSION}\"/" mix.exs
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/${{ github.repository }}/releases/generate-notes \
+            -f tag_name="v${{ steps.version.outputs.version }}" \
+            --jq .body > release_notes.md
+
+      - name: Download benchmark results
+        uses: actions/download-artifact@v4
+        # Non-blocking: publish proceeds even if the benchmark artifact is absent.
+        continue-on-error: true
+        with:
+          name: benchmark-results
+
+      - name: Append benchmarks to release notes
+        run: |
+          if [ -f bench_results.txt ]; then
+            {
+              echo ""
+              echo "## Benchmarks"
+              echo ""
+              echo "Measured against \`mcr.microsoft.com/mssql/server:2022-latest\` on \`ubuntu-latest\`."
+              echo ""
+              echo '```'
+              cat bench_results.txt
+              echo '```'
+            } >> release_notes.md
+          fi
+
+      - name: Publish to Hex.pm
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+        run: mix hex.publish --yes
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" \
+            --title "v${{ steps.version.outputs.version }}" \
+            --notes-file release_notes.md

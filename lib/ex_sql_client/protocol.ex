@@ -7,14 +7,20 @@ defmodule ExSqlClient.Protocol do
 
   alias Netler.Client
 
-  defstruct client: nil, checked_out: false, status: :idle, transaction_id: nil
+  defstruct client: nil, status: :idle, transaction_id: nil
 
   @impl true
   def connect(opts) do
     connection_string = Keyword.get(opts, :connection_string)
     {:ok, client} = Client.start_link(:dotnet_sql_client)
-    {:ok, true} = Client.invoke(client, "Connect", [connection_string])
-    {:ok, %__MODULE__{client: client}}
+
+    case Client.invoke(client, "Connect", [connection_string]) do
+      {:ok, true} ->
+        {:ok, %__MODULE__{client: client}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @impl true
@@ -58,6 +64,9 @@ defmodule ExSqlClient.Protocol do
       {:error, reason} -> {:error, reason, state}
     end
   end
+
+  @impl true
+  def handle_close(_query, _opts, state), do: {:ok, nil, state}
 
   @impl true
   def handle_execute(
@@ -145,38 +154,23 @@ defmodule ExSqlClient.Protocol do
   end
 
   @impl true
-  def checkout(state) do
-    state = %{state | checked_out: true}
-    {:ok, state}
+  def checkout(state), do: {:ok, state}
+
+  @impl true
+  def handle_status(_opts, state), do: {state.status, state}
+
+  @impl true
+  def handle_declare(_query, _params, _opts, state) do
+    {:error, %DBConnection.ConnectionError{message: "cursors not supported"}, state}
   end
 
   @impl true
-  def checkin(_state) do
-    Logger.error("checkin not implemented")
-    :not_implemented
+  def handle_fetch(_query, _cursor, _opts, state) do
+    {:error, %DBConnection.ConnectionError{message: "cursors not supported"}, state}
   end
 
   @impl true
-  def handle_deallocate(_query, _cursor, _opts, _state) do
-    Logger.error("handle_deallocate not implemented")
-    :not_implemented
-  end
-
-  @impl true
-  def handle_declare(_query, _params, _opts, _state) do
-    Logger.error("handle_declare not implemented")
-    :not_implemented
-  end
-
-  @impl true
-  def handle_fetch(_query, _cursor, _opts, _state) do
-    Logger.error("handle_fetch not implemented")
-    :not_implemented
-  end
-
-  @impl true
-  def handle_status(_opts, _state) do
-    Logger.error("handle_status not implemented")
-    :not_implemented
+  def handle_deallocate(_query, _cursor, _opts, state) do
+    {:error, %DBConnection.ConnectionError{message: "cursors not supported"}, state}
   end
 end

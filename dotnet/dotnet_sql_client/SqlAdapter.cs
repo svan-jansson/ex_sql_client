@@ -1,209 +1,214 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
-using System.Linq;
+using Microsoft.Data.SqlClient;
 
-namespace DotnetSqlClient
+namespace DotnetSqlClient;
+
+public class SqlAdapter
 {
-    public class SqlAdapter
+    private IDbConnection Connection { get; set; }
+    private Dictionary<int, IDbTransaction> Transactions { get; set; }
+    private Dictionary<int, IDbCommand> PreparedStatements { get; set; }
+    private int _nextId = 0;
+
+    // Returns immediately without touching SQL Server.
+    // Used by the Elixir benchmarks to isolate pure Netler IPC overhead.
+    public static bool NoOp() => true;
+
+    public bool Connect(string connectionString)
     {
-        private IDbConnection Connection { get; set; }
-        private Dictionary<int, IDbTransaction> Transactions { get; set; }
-        private Dictionary<int, IDbCommand> PreparedStatements { get; set; }
-
-        public object Connect(params object[] parameters)
+        if (Connection == null)
         {
-            if (Connection == null)
-            {
-                var connectionString = Convert.ToString(parameters[0]);
-                Connection = new SqlConnection(connectionString);
-                Connection.Open();
-            }
-            Transactions = new Dictionary<int, IDbTransaction>();
-            PreparedStatements = new Dictionary<int, IDbCommand>();
-            return Connection.State == ConnectionState.Open;
+            Connection = new SqlConnection(connectionString);
+            Connection.Open();
         }
+        Transactions = new Dictionary<int, IDbTransaction>();
+        PreparedStatements = new Dictionary<int, IDbCommand>();
+        return Connection.State == ConnectionState.Open;
+    }
 
-        public object Disconnect(params object[] _)
+    public bool Disconnect()
+    {
+        if (Connection != null)
         {
-            if (Connection != null)
-            {
-                Connection.Close();
-                Connection.Dispose();
-                Connection = null;
-                Transactions = null;
-                PreparedStatements = null;
-            }
-            return true;
+            Connection.Close();
+            Connection.Dispose();
+            Connection = null;
+            Transactions = null;
+            PreparedStatements = null;
         }
+        return true;
+    }
 
-        public object BeginTransaction(params object[] _)
+    public int BeginTransaction()
+    {
+        var transaction = Connection.BeginTransaction();
+        var transactionId = System.Threading.Interlocked.Increment(ref _nextId);
+        Transactions.Add(transactionId, transaction);
+        return transactionId;
+    }
+
+    public bool RollbackTransaction(int transactionId)
+    {
+        var transaction = Transactions[transactionId];
+        try
         {
-            var transaction = Connection.BeginTransaction();
-            var transactionId = transaction.GetHashCode();
-            Transactions.Add(transactionId, transaction);
-            return transactionId;
+            transaction.Rollback();
         }
-
-        public object RollbackTransaction(params object[] parameters)
+        finally
         {
-            var transactionId = Convert.ToInt32(parameters[0]);
-            var transaction = Transactions[transactionId];
-            try
-            {
-                transaction.Rollback();
-            }
-            catch
-            {
-                Transactions.Remove(transactionId);
-                transaction.Dispose();
-                throw;
-            }
-            return true;
+            Transactions.Remove(transactionId);
+            transaction.Dispose();
         }
+        return true;
+    }
 
-        public object CommitTransaction(params object[] parameters)
+    public bool CommitTransaction(int transactionId)
+    {
+        var transaction = Transactions[transactionId];
+        try
         {
-            var transactionId = Convert.ToInt32(parameters[0]);
-            var transaction = Transactions[transactionId];
-            try
-            {
-                transaction.Commit();
-            }
-            catch
-            {
-                Transactions.Remove(transactionId);
-                transaction.Dispose();
-                throw;
-            }
-            return true;
+            transaction.Commit();
         }
-
-        public object Execute(params object[] parameters)
+        finally
         {
-            var sql = Convert.ToString(parameters[0]);
-            var variables = parameters[1] as IDictionary<object, object>;
-            return ExecuteStatement(sql, variables);
+            Transactions.Remove(transactionId);
+            transaction.Dispose();
         }
+        return true;
+    }
 
-        public object ExecuteInTransaction(params object[] parameters)
+    public List<IDictionary<string, object>> Execute(string sql, IDictionary<object, object> variables)
+    {
+        return ExecuteStatement(sql, variables);
+    }
+
+    public List<IDictionary<string, object>> ExecuteInTransaction(string sql, IDictionary<object, object> variables, int transactionId)
+    {
+        var transaction = Transactions[transactionId];
+        return ExecuteStatement(sql, variables, transaction);
+    }
+
+    public List<IDictionary<string, object>> ExecutePreparedStatement(string sql, IDictionary<object, object> variables, int statementId)
+    {
+        var command = PreparedStatements[statementId];
+        return ExecuteStatement(sql, variables, command: command);
+    }
+
+    public List<IDictionary<string, object>> ExecutePreparedStatementInTransaction(string sql, IDictionary<object, object> variables, int transactionId, int statementId)
+    {
+        var transaction = Transactions[transactionId];
+        var command = PreparedStatements[statementId];
+        return ExecuteStatement(sql, variables, transaction, command);
+    }
+
+    public bool ClosePreparedStatement(int statementId)
+    {
+        var command = PreparedStatements[statementId];
+        PreparedStatements.Remove(statementId);
+        command.Dispose();
+        return true;
+    }
+
+    public int PrepareStatement(string sql)
+    {
+        var command = Connection.CreateCommand();
+        try
         {
-            var sql = Convert.ToString(parameters[0]);
-            var variables = parameters[1] as IDictionary<object, object>;
-            var transactionId = Convert.ToInt32(parameters[2]);
-            var transaction = Transactions[transactionId];
-            return ExecuteStatement(sql, variables, transaction);
+            command.CommandText = sql;
+            command.Prepare();
         }
-
-        public object ExecutePreparedStatement(params object[] parameters)
+        catch
         {
-            var sql = Convert.ToString(parameters[0]);
-            var variables = parameters[1] as IDictionary<object, object>;
-            var statementId = Convert.ToInt32(parameters[2]);
-            var command = PreparedStatements[statementId];
-            return ExecuteStatement(sql, variables, command: command);
-        }
-
-        public object ExecutePreparedStatementInTransaction(params object[] parameters)
-        {
-            var sql = Convert.ToString(parameters[0]);
-            var variables = parameters[1] as IDictionary<object, object>;
-            var transactionId = Convert.ToInt32(parameters[2]);
-            var statementId = Convert.ToInt32(parameters[3]);
-            var transaction = Transactions[transactionId];
-            var command = PreparedStatements[statementId];
-            return ExecuteStatement(sql, variables, transaction, command);
-        }
-
-        public object ClosePreparedStatement(params object[] parameters)
-        {
-            var statementId = Convert.ToInt32(parameters[0]);
-            var command = PreparedStatements[statementId];
-            PreparedStatements.Remove(statementId);
             command.Dispose();
-            return true;
+            throw;
+        }
+        var statementId = System.Threading.Interlocked.Increment(ref _nextId);
+        PreparedStatements.Add(statementId, command);
+        return statementId;
+    }
+
+    private List<IDictionary<string, object>> ExecuteStatement(string sql, IDictionary<object, object> variables, IDbTransaction transaction = null, IDbCommand command = null)
+    {
+        var results = new List<IDictionary<string, object>>();
+        var disposeCommand = command == null;
+        if (disposeCommand)
+        {
+            command = Connection.CreateCommand();
+            command.CommandText = sql;
+        }
+        else
+        {
+            command.Parameters.Clear();
         }
 
-        public object PrepareStatement(params object[] parameters)
+        try
         {
-            var sql = Convert.ToString(parameters[0]);
-            var command = Connection.CreateCommand();
-            try
-            {
-                command.CommandText = sql;
-                command.Prepare();
-            }
-            catch
-            {
-                command.Dispose();
-                throw;
-            }
-            var statementId = command.GetHashCode();
-            PreparedStatements.Add(statementId, command);
-            return statementId;
-        }
+            if (transaction != null)
+                command.Transaction = transaction;
 
-        private object ExecuteStatement(string sql, IDictionary<object, object> variables, IDbTransaction transaction = null, IDbCommand command = null)
-        {
-            var results = new List<IDictionary<string, object>>();
-            var disposeCommand = false;
-            if (command == null)
+            if (variables != null)
             {
-                command = Connection.CreateCommand();
-                command.CommandText = sql;
-                disposeCommand = true;
-            }
-            else
-            {
-                command.Parameters.Clear();
-            }
-
-            try
-            {
-                if (transaction != null)
+                foreach (var pair in variables)
                 {
-                    command.Transaction = transaction;
+                    var key = pair.Key.ToString();
+                    if (!IsValidParameterName(key))
+                        throw new ArgumentException($"Invalid parameter name: {key}");
+                    command.Parameters.Add(new SqlParameter("@" + key, NormalizeValue(pair.Value)));
                 }
+            }
 
-                if (variables != null)
-                {
-                    foreach (var pair in variables)
-                    {
-                        var parameter = new SqlParameter("@" + pair.Key.ToString(), pair.Value);
-                        command.Parameters.Add(parameter);
-                    }
-                }
-                var reader = command.ExecuteReader();
-                var hasResults = true;
-                while (hasResults)
+            using (var reader = command.ExecuteReader())
+            {
+                do
                 {
                     while (reader.Read())
                     {
-                        results.Add(Enumerable.Range(0, reader.FieldCount)
-                            .ToDictionary(i =>
-                            {
-                                var name = reader.GetName(i);
-                                if (string.IsNullOrEmpty(name))
-                                {
-                                    name = i.ToString();
-                                }
-                                return name;
-                            }, i => reader.IsDBNull(i) ? null : reader.GetValue(i)));
+                        var row = new Dictionary<string, object>(reader.FieldCount);
+                        for (int i = 0; i < reader.FieldCount; i++)
+                        {
+                            var name = reader.GetName(i);
+                            if (string.IsNullOrEmpty(name))
+                                name = i.ToString();
+                            row[name] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                        }
+                        results.Add(row);
                     }
-                    hasResults = reader.NextResult();
-                }
-                reader.Close();
+                } while (reader.NextResult());
             }
-            catch
-            {
-                if (disposeCommand)
-                {
-                    command.Dispose();
-                }
-                throw;
-            }
-            return results;
         }
+        finally
+        {
+            if (disposeCommand)
+                command.Dispose();
+        }
+
+        return results;
+    }
+
+    // MessagePack encodes integers using the minimum byte width, so Elixir
+    // integers arrive as byte/ushort/uint/ulong depending on magnitude.
+    // SQL Server rejects all unsigned integer types, so we promote them to
+    // their signed equivalents before building SqlParameter.
+    private static object NormalizeValue(object value) => value switch
+    {
+        null => DBNull.Value,
+        byte b => (int)b,
+        ushort us => (int)us,
+        uint ui => (long)ui,
+        ulong ul => (long)ul,
+        _ => value
+    };
+
+    private static bool IsValidParameterName(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return false;
+        foreach (var c in name)
+        {
+            if (!char.IsLetterOrDigit(c) && c != '_')
+                return false;
+        }
+        return true;
     }
 }

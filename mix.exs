@@ -6,14 +6,14 @@ defmodule ExSqlClient.MixProject do
       app: :ex_sql_client,
       name: "ExSqlClient",
       source_url: "https://github.com/svan-jansson/ex_sql_client",
-      version: "0.1.1",
+      version: "0.0.0-dev",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
       package: package(),
       docs: docs(),
-      compilers: Mix.compilers() ++ [:netler],
+      compilers: Mix.compilers() ++ [:dotnet_build],
       dotnet_projects: [
         {:dotnet_sql_client, autostart: false}
       ]
@@ -30,10 +30,12 @@ defmodule ExSqlClient.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:netler, "~> 0.3"},
-      {:db_connection, "~> 2.2"},
-      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
-      {:credo, "~> 1.1.0", only: [:dev, :test], runtime: false}
+      {:netler, "~> 0.4"},
+      {:db_connection, "~> 2.5"},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:testcontainers, "~> 1.0", only: [:dev, :test]},
+      {:benchee, "~> 1.3", only: :dev, runtime: false}
     ]
   end
 

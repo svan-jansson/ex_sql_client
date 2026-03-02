@@ -2,9 +2,7 @@ defmodule QueryTest do
   use ExUnit.Case
 
   setup_all do
-    connection_string =
-      "Server=localhost; MultipleActiveResultSets=true; User Id=sa; Password=InsecurePassword123"
-
+    connection_string = Application.fetch_env!(:ex_sql_client, :test_connection_string)
     {:ok, conn} = ExSqlClient.start_link(connection_string: connection_string)
 
     {:ok, _} =
