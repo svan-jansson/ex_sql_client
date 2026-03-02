@@ -13,7 +13,7 @@ defmodule ExSqlClient.MixProject do
       description: description(),
       package: package(),
       docs: docs(),
-      compilers: Mix.compilers() ++ [:dotnet_build],
+      compilers: Mix.compilers() ++ [:netler],
       dotnet_projects: [
         {:dotnet_sql_client, autostart: false}
       ]
