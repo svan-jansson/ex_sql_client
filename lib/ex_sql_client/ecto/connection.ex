@@ -180,12 +180,7 @@ defmodule ExSqlClient.Ecto.Connection do
           [_, select_clause] ->
             select_clause
             |> split_select_list()
-            |> Enum.map(fn item ->
-              case Regex.run(~r/\[([^\]]+)\]\s*\z/, String.trim(item)) do
-                [_, name] -> name
-                _ -> nil
-              end
-            end)
+            |> Enum.map(&extract_bracketed_name/1)
             |> Enum.reject(&is_nil/1)
 
           _ ->
@@ -195,6 +190,13 @@ defmodule ExSqlClient.Ecto.Connection do
   end
 
   defp column_order_from_sql(_), do: nil
+
+  defp extract_bracketed_name(item) do
+    case Regex.run(~r/\[([^\]]+)\]\s*\z/, String.trim(item)) do
+      [_, name] -> name
+      _ -> nil
+    end
+  end
 
   # Split a SELECT projection list on commas that are NOT inside parentheses.
   defp split_select_list(str) do

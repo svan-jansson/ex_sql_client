@@ -38,9 +38,8 @@ defmodule ExSqlClient.Ecto do
     # The default implementation tries to start :ex_sql_client as an OTP
     # application which would attempt to launch the .NET process before any
     # connection options are known.  We start only the runtime deps instead.
-    with {:ok, _} <- Application.ensure_all_started(:netler, type),
-         {:ok, apps} <- Application.ensure_all_started(:db_connection, type) do
-      {:ok, apps}
+    with {:ok, _} <- Application.ensure_all_started(:netler, type) do
+      Application.ensure_all_started(:db_connection, type)
     end
   end
 

@@ -2,7 +2,7 @@
     <img src="logo/ex_sql_client.svg" alt="netler logo" height="150px">
 </p>
 
-[![Build Status](https://travis-ci.com/svan-jansson/ex_sql_client.svg?branch=master)](https://travis-ci.com/svan-jansson/ex_sql_client)
+[![Build Status](https://github.com/svan-jansson/ex_sql_client/actions/workflows/build-test-publish.yml/badge.svg)](https://github.com/svan-jansson/ex_sql_client/actions/workflows/build-test-publish.yml)
 [![Hex pm](https://img.shields.io/hexpm/v/ex_sql_client.svg?style=flat)](https://hex.pm/packages/ex_sql_client)
 [![Hex pm](https://img.shields.io/hexpm/dt/ex_sql_client.svg?style=flat)](https://hex.pm/packages/ex_sql_client)
 
@@ -68,16 +68,6 @@ Start a connection using a standard ADO.NET connection string:
   ExSqlClient.start_link(
     connection_string:
       "Server=myServerAddress;Database=myDataBase;User Id=myUsername;Password=myPassword;"
-  )
-```
-
-For encrypted connections:
-
-```elixir
-{:ok, conn} =
-  ExSqlClient.start_link(
-    connection_string:
-      "Server=myServerAddress,1433;Database=myDataBase;User Id=sa;Password=secret;TrustServerCertificate=True;"
   )
 ```
 
