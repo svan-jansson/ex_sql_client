@@ -32,6 +32,8 @@ defmodule ExSqlClient.MixProject do
     [
       {:netler, "~> 0.4"},
       {:db_connection, "~> 2.5"},
+      {:ecto, "~> 3.10", optional: true},
+      {:ecto_sql, "~> 3.10", optional: true},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:testcontainers, "~> 1.0", only: [:dev, :test]},

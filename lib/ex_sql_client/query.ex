@@ -9,4 +9,8 @@ defmodule ExSqlClient.Query do
     def encode(_query, params, _), do: params
     def decode(_, result, _opts), do: result
   end
+
+  defimpl String.Chars, for: ExSqlClient.Query do
+    def to_string(%{statement: statement}), do: statement || ""
+  end
 end

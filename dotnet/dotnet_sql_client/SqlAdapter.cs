@@ -159,6 +159,7 @@ public class SqlAdapter
                 }
             }
 
+            int recordsAffected;
             using (var reader = command.ExecuteReader())
             {
                 do
@@ -176,6 +177,20 @@ public class SqlAdapter
                         results.Add(row);
                     }
                 } while (reader.NextResult());
+
+                // Capture before Dispose(); SELECT returns -1, DML returns >= 0.
+                recordsAffected = reader.RecordsAffected;
+            }
+
+            // For DML without an OUTPUT clause (UPDATE/DELETE/INSERT without RETURNING)
+            // no result rows come back, but Ecto needs the affected-row count to detect
+            // stale entries and return correct counts from update_all/delete_all.
+            if (results.Count == 0 && recordsAffected >= 0)
+            {
+                results.Add(new Dictionary<string, object>
+                {
+                    ["__rows_affected__"] = (long)recordsAffected
+                });
             }
         }
         finally

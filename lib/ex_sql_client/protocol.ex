@@ -88,7 +88,7 @@ defmodule ExSqlClient.Protocol do
   end
 
   @impl true
-  def handle_execute(query, params, _opts, state = %{status: :transaction}) do
+  def handle_execute(query, params, _opts, %{status: :transaction} = state) do
     case Client.invoke(state.client, "ExecuteInTransaction", [
            query.statement,
            params,
@@ -121,7 +121,7 @@ defmodule ExSqlClient.Protocol do
   end
 
   @impl true
-  def handle_begin(_opts, state = %{status: :idle}) do
+  def handle_begin(_opts, %{status: :idle} = state) do
     case Client.invoke(state.client, "BeginTransaction", []) do
       {:ok, transaction_id} ->
         {:ok, :began, %{state | status: :transaction, transaction_id: transaction_id}}
@@ -132,7 +132,7 @@ defmodule ExSqlClient.Protocol do
   end
 
   @impl true
-  def handle_rollback(_opts, state = %{status: :transaction}) do
+  def handle_rollback(_opts, %{status: :transaction} = state) do
     case Client.invoke(state.client, "RollbackTransaction", [state.transaction_id]) do
       {:ok, true} ->
         {:ok, :rolledback, %{state | status: :idle, transaction_id: nil}}
@@ -143,7 +143,7 @@ defmodule ExSqlClient.Protocol do
   end
 
   @impl true
-  def handle_commit(_opts, state = %{status: :transaction}) do
+  def handle_commit(_opts, %{status: :transaction} = state) do
     case Client.invoke(state.client, "CommitTransaction", [state.transaction_id]) do
       {:ok, true} ->
         {:ok, :committed, %{state | status: :idle, transaction_id: nil}}
