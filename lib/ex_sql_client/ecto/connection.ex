@@ -1,3 +1,4 @@
+if Code.ensure_loaded?(Ecto.Adapters.SQL.Connection) do
 defmodule ExSqlClient.Ecto.Connection do
   @moduledoc false
 
@@ -36,7 +37,7 @@ defmodule ExSqlClient.Ecto.Connection do
     encoded = encode_params(params)
     col_order = column_order_from_sql(query.statement)
 
-    case DBConnection.prepare_execute(conn, query, encoded, opts) do
+    case DBConnection.execute(conn, query, encoded, opts) do
       {:ok, q, result} -> {:ok, q, normalize_result(result, col_order)}
       {:error, _} = err -> err
     end
@@ -405,7 +406,7 @@ defmodule ExSqlClient.Ecto.Connection do
     {filters, _count} =
       intersperse_reduce(filters, " AND ", count, fn
         {field, nil}, acc ->
-          {[quote_name(field), " IS NULL"], acc + 1}
+          {[quote_name(field), " IS NULL"], acc}
 
         {field, _value}, acc ->
           {[quote_name(field), " = @", Integer.to_string(acc)], acc + 1}
@@ -429,7 +430,7 @@ defmodule ExSqlClient.Ecto.Connection do
     {filters, _} =
       intersperse_reduce(filters, " AND ", 1, fn
         {field, nil}, acc ->
-          {[quote_name(field), " IS NULL"], acc + 1}
+          {[quote_name(field), " IS NULL"], acc}
 
         {field, _value}, acc ->
           {[quote_name(field), " = @", Integer.to_string(acc)], acc + 1}
@@ -1192,4 +1193,5 @@ defmodule ExSqlClient.Ecto.Connection do
   defp error!(query, message) do
     raise Ecto.QueryError, query: query, message: message
   end
+end
 end

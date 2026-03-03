@@ -127,10 +127,10 @@ end
 ### Configuration
 
 ```elixir
-# config/config.exs
+# config/config.exs 
 config :my_app, MyApp.Repo,
   connection_string:
-    "Server=localhost,1433;Database=mydb;User Id=sa;Password=secret;TrustServerCertificate=True"
+    "Server=tcp:db.example.com,1433;Database=mydb;User Id=myapp_user;Password=secret;Encrypt=True"
 ```
 
 Add the repo to your application's supervision tree:

@@ -1,3 +1,4 @@
+if Code.ensure_loaded?(Ecto.Adapters.SQL) do
 defmodule ExSqlClient.Ecto do
   @moduledoc """
   Ecto 3 adapter for ExSqlClient (Microsoft SQL Server).
@@ -38,8 +39,9 @@ defmodule ExSqlClient.Ecto do
     # The default implementation tries to start :ex_sql_client as an OTP
     # application which would attempt to launch the .NET process before any
     # connection options are known.  We start only the runtime deps instead.
-    with {:ok, _} <- Application.ensure_all_started(:netler, type) do
-      Application.ensure_all_started(:db_connection, type)
+    with {:ok, netler_apps} <- Application.ensure_all_started(:netler, type),
+         {:ok, db_conn_apps} <- Application.ensure_all_started(:db_connection, type) do
+      {:ok, Enum.uniq(netler_apps ++ db_conn_apps)}
     end
   end
 
@@ -65,10 +67,15 @@ defmodule ExSqlClient.Ecto do
   def lock_for_migrations(_meta, _opts, fun), do: fun.()
 
   # MSSQL BIT column is stored as 0/1 integer; map back to Elixir boolean.
+  defp bool_decode(nil), do: {:ok, nil}
   defp bool_decode(0), do: {:ok, false}
   defp bool_decode(1), do: {:ok, true}
   defp bool_decode(v) when is_boolean(v), do: {:ok, v}
+  defp bool_decode(_), do: :error
 
+  defp bool_encode(nil), do: {:ok, nil}
   defp bool_encode(false), do: {:ok, 0}
   defp bool_encode(true), do: {:ok, 1}
+  defp bool_encode(_), do: :error
+end
 end
