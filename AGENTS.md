@@ -63,18 +63,30 @@ in `dotnet/dotnet_sql_client/` and places the binary in `priv/`.
 
 ## Testing
 
-Integration tests spin up a SQL Server container automatically via
-[Testcontainers](https://hex.pm/packages/testcontainers). Docker (or a
-compatible runtime) must be available on the machine.
+There are two categories of tests:
+
+**Unit tests** (no database required) — SQL generation tests for the Ecto adapter:
 
 ```bash
-mix test --only integration
+mix test test/ecto/query_test.exs
+```
+
+**Integration tests** spin up a SQL Server container automatically via
+[Testcontainers](https://hex.pm/packages/testcontainers). Docker or a
+compatible rootless runtime (e.g. Podman) must be available.
+
+```bash
+# Core driver integration tests
+mix test --include integration
+
+# All Ecto adapter tests (unit + integration)
+mix test test/ecto/ --include integration
 ```
 
 The container is started once in `test/test_helper.exs` and the connection
-string is shared with all test modules via `Application.put_env`. All tests are
-tagged with `@tag :integration`. There are no unit tests that run without a
-live database.
+string is shared with all test modules via `Application.put_env`. Integration
+tests are tagged with `@tag :integration` and are excluded by default; pass
+`--include integration` to run them.
 
 ---
 
