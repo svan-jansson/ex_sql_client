@@ -203,3 +203,47 @@ MyApp.Repo.delete_all(from u in MyApp.User, where: u.email == ^"old@example.com"
 | `json_extract_path` | Not supported; use `fragment/1` with `JSON_VALUE`/`JSON_QUERY` instead |
 | `OFFSET` without `ORDER BY` | Raises at compile time — SQL Server requires `ORDER BY` when using `OFFSET` |
 | `OFFSET` without `LIMIT` | Raises at compile time |
+
+---
+
+## Performance
+
+ExSqlClient uses [Netler](https://github.com/svan-jansson/netler) to communicate with a .NET worker process over a local TCP socket using MessagePack serialisation. Every query involves at least one Elixir → .NET → SQL Server → .NET → Elixir round-trip.
+
+### Benchmark highlights
+
+Measured with `mix run bench/benchmarks.exs` against SQL Server 2022 in a local container. Single-process, `pool_size: 5` for query scenarios, `pool_size: 1` for prepared statements. Machine: Intel Core Ultra 9 285H, Elixir 1.19.5, Erlang/OTP 28.
+
+| Scenario | Median latency | Throughput |
+|---|---|---|
+| Netler IPC only (no SQL) | 0.022 ms | ~26 000 req/s |
+| SELECT constant (`SELECT 1`) | 0.95 ms | ~900 req/s |
+| SELECT 1 row | 0.94 ms | ~900 req/s |
+| SELECT 1 row, parameterised | 1.13 ms | ~760 req/s |
+| SELECT 10 rows | 1.17 ms | ~770 req/s |
+| SELECT 100 rows | 1.37 ms | ~670 req/s |
+| Prepared statement (SELECT 1 row) | 0.40 ms | ~1 400 req/s |
+| INSERT | 5.34 ms | ~180 req/s |
+| Transaction (INSERT + commit) | 6.38 ms | ~150 req/s |
+
+### What the numbers mean
+
+**Netler IPC overhead is negligible.** The raw IPC round-trip (no SQL) costs ~0.02 ms. The ~1 ms you see on a simple SELECT is almost entirely SQL Server query execution and ADO.NET overhead — not the Elixir↔.NET transport.
+
+**Prepared statements halve read latency.** Reusing a prepared statement drops median latency from ~0.94 ms to ~0.40 ms by skipping the SQL Server parse/compile step on repeated identical queries.
+
+**Row count has modest impact on reads.** Fetching 100 rows takes ~1.37 ms vs ~0.94 ms for 1 row — the extra 0.4 ms is serialisation and transfer of the additional data.
+
+**Write operations are slower due to SQL Server I/O.** An INSERT takes ~5.3 ms; wrapping it in an explicit transaction adds ~1 ms for the `BEGIN`/`COMMIT` round-trips.
+
+**Throughput scales with pool size.** The figures above are for a single Elixir process. With a larger `pool_size` and concurrent callers, total throughput grows proportionally up to the SQL Server's own limits.
+
+### Running the benchmarks yourself
+
+```bash
+# Uses Testcontainers to spin up SQL Server automatically
+mix run bench/benchmarks.exs
+
+# Or point at an existing SQL Server instance
+MSSQL_CONNECTION_STRING="Server=...;..." mix run bench/benchmarks.exs
+```
