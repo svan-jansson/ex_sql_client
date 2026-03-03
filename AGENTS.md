@@ -18,24 +18,27 @@ The library requires a running SQL Server instance for its integration tests.
 
 ```
 lib/
-  ex_sql_client.ex            # Public API – the main entry point
+  ex_sql_client.ex            # Public API – start_link/query/prepare/transaction
   ex_sql_client/
-    connection.ex             # DBConnection behaviour implementation
-    protocol.ex               # Netler RPC call helpers
-    query.ex                  # Query struct
-    result.ex                 # Result struct
+    protocol.ex               # DBConnection behaviour implementation (Netler RPC)
+    query.ex                  # Query struct (statement + statement_id)
+    ecto.ex                   # Ecto 3 adapter entry point (use Ecto.Adapters.SQL)
+    ecto/
+      connection.ex           # Ecto.Adapters.SQL.Connection: SQL generation + result normalisation
 dotnet/dotnet_sql_client/
   DotnetSqlClient.csproj      # .NET 8 project file
   Program.cs                  # Netler.NET server bootstrap
   SqlAdapter.cs               # SQL Server operations via Microsoft.Data.SqlClient
 test/
-  query_test.exs
-  transaction_test.exs
-  prepared_statement_test.exs
-  data_type_test.exs
-  test_helper.exs
+  query_test.exs              # Integration: raw query tests
+  transaction_test.exs        # Integration: transaction tests
+  prepared_statement_test.exs # Integration: prepared statement tests
+  data_type_test.exs          # Integration: type mapping tests
+  test_helper.exs             # Testcontainers setup and connection string injection
+  ecto/
+    query_test.exs            # Unit: SQL generation tests (no DB required)
+    ecto_adapter_test.exs     # Integration: end-to-end Ecto adapter tests
 mix.exs                       # Build config and project metadata
-docker-compose.yml            # Local SQL Server for integration tests
 .github/workflows/            # GitHub Actions CI (build + test + publish)
 ```
 
