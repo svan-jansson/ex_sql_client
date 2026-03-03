@@ -116,25 +116,43 @@ tests are tagged with `@tag :integration` and are excluded by default; pass
 
 ## Architecture notes
 
-The call chain for a query is:
+The call chain for a raw (`ExSqlClient`) query is:
 
 ```
 Elixir caller
-  → ExSqlClient (DBConnection behaviour)
-    → Netler RPC (TCP socket, port process)
-      → Program.cs (Netler.NET server)
-        → SqlAdapter.cs
-          → Microsoft.Data.SqlClient
-            → SQL Server
+  → ExSqlClient (public API)
+    → ExSqlClient.Protocol (DBConnection behaviour)
+      → Netler RPC (TCP socket, port process)
+        → Program.cs (Netler.NET server)
+          → SqlAdapter.cs
+            → Microsoft.Data.SqlClient
+              → SQL Server
+```
+
+When using the Ecto adapter, an additional layer sits in front:
+
+```
+Ecto / Repo
+  → ExSqlClient.Ecto (Ecto.Adapters.SQL)
+    → ExSqlClient.Ecto.Connection (SQL generation, result normalisation)
+      → ExSqlClient.Protocol (DBConnection behaviour)
+        → … (same chain as above)
 ```
 
 Key invariants:
 - The .NET process is started by Netler as a port. It listens on a TCP port
   passed as `args[0]`; the Elixir PID is passed as `args[1]`.
 - All route names in `Program.cs` must be registered and match what the
-  Elixir layer calls via Netler.
+  Elixir layer calls via `Netler.Client.invoke/3`.
 - Connection and transaction state is held in `SqlAdapter` — one instance per
   connection process.
+- The Ecto adapter generates MSSQL-dialect SQL: bracket identifiers `[name]`,
+  `TOP(n)` for limits without offset, `OFFSET … FETCH NEXT … ROWS ONLY` for
+  pagination, and `OUTPUT INSERTED/DELETED` for `RETURNING`.
+- Netler/MessagePack deserialises result rows as Elixir `Map`, which sorts
+  string keys alphabetically. `ExSqlClient.Ecto.Connection` recovers the
+  correct column order by parsing the SELECT projection or OUTPUT clause from
+  the SQL string before returning results to Ecto.
 
 ---
 
