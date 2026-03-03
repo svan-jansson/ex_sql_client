@@ -163,21 +163,31 @@ Good first contributions:
 - Adding `@spec` / `@type` annotations to the Elixir modules.
 - Improving error propagation from the .NET layer to Elixir.
 - Updating dependencies as new versions are released.
+- Expanding `test/ecto/query_test.exs` with additional SQL generation cases.
 
 Areas requiring extra care:
 - Anything touching `Program.cs` or `SqlAdapter.cs` — changes must compile
   with the pinned .NET version and be verified against a live SQL Server.
+- `SqlAdapter.cs` DML result handling — `ExecuteReader` is used for all
+  statements so that `OUTPUT` clauses are supported; `RecordsAffected` is
+  captured inside the `using` block and injected as a synthetic
+  `__rows_affected__` row for DML without an `OUTPUT` clause.
 - Netler version upgrades — the RPC protocol may change between major versions;
   always check `Program.cs` against the new Netler.NET API.
 - `DBConnection` behaviour callbacks — maintain compatibility with the
   `db_connection` contract.
+- `ExSqlClient.Ecto.Connection` — column-order recovery relies on regex parsing
+  of the generated SQL; changes to the SQL generator must keep
+  `column_order_from_sql/1` in sync.
 
 ---
 
 ## Pull request checklist
 
 - [ ] `mix compile --warnings-as-errors` passes.
-- [ ] `mix test --only integration` passes against a local SQL Server.
+- [ ] `mix test test/ecto/query_test.exs` passes (no DB needed).
+- [ ] `mix test --include integration` passes against a local SQL Server.
+- [ ] `mix test test/ecto/ --include integration` passes for Ecto adapter changes.
 - [ ] `mix format --check-formatted` passes.
 - [ ] `mix credo` passes.
 - [ ] New public functions have `@doc` and `@spec`.
@@ -190,5 +200,11 @@ Areas requiring extra care:
 - Windows CI — the SQL Server Docker container is Linux-only in GitHub Actions;
   the library itself is cross-platform but CI runs on Linux.
 - Supporting databases other than Microsoft SQL Server.
+- Ecto migrations / DDL — `execute_ddl/1` raises intentionally; use
+  `ExSqlClient.query/3` directly for schema changes.
+- `Repo.stream/2` and cursor-based fetching — the Netler/C# layer does not
+  implement server-side cursors.
+- Multiple result sets via the Ecto adapter (`query_many/4` raises); use the
+  raw `ExSqlClient` API if you need multiple result sets.
 - Changing the `DBConnection` protocol — maintain compatibility with standard
-  Elixir database tooling (Ecto, etc.).
+  Elixir database tooling.
